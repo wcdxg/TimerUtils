@@ -1,15 +1,19 @@
 package com.yuaihen.timerutil
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.widget.AppCompatEditText
@@ -31,11 +35,11 @@ class MainActivity : AppCompatActivity() {
         var APP_PACKAGE_NAME: String = ""
     }
 
-
+    private var myReceiver: BroadcastReceiver? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         setContentView(R.layout.activity_main)
-
 
         tvAppName = findViewById(R.id.tv_appName)
         progressBar = findViewById(R.id.progressBar)
@@ -48,6 +52,13 @@ class MainActivity : AppCompatActivity() {
         }
         editHour = findViewById(R.id.edit_hour)
         editMinutes = findViewById(R.id.edit_minutes)
+
+        val filter = IntentFilter("action").apply {
+//            addAction(Intent.ACTION_SCREEN_OFF)
+//            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        myReceiver = MyReceiver()
+        registerReceiver(myReceiver, filter)
     }
 
     private fun initWorker() {
@@ -88,6 +99,7 @@ class MainActivity : AppCompatActivity() {
 
         val myWorker = OneTimeWorkRequestBuilder<MyWorker>()
             .setInitialDelay(minutes.toLong(), TimeUnit.MINUTES)
+//            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 //
 
@@ -134,6 +146,11 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         progressBar.visibility = View.INVISIBLE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(myReceiver)
     }
 
 }
