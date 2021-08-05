@@ -1,8 +1,11 @@
 package com.yuaihen.timerutil
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -12,54 +15,50 @@ import kotlinx.coroutines.launch
 /**
  * Created by Administrator.
  * on 2021/07/30
+ * Worker
  */
 class MyWorker(private val context: Context, workerParams: WorkerParameters) :
     Worker(context, workerParams) {
 
     override fun doWork(): Result {
         //打开需要启动的APP 通过包名
-        Log.d("zhj", "doWork: 开始执行定时任务打开 ${MainActivity.APP_PACKAGE_NAME}")
-//        val intent =
-//            applicationContext.packageManager.getLaunchIntentForPackage(MainActivity.APP_PACKAGE_NAME)
-//        intent?.let {
-//            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//            applicationContext.startActivity(it)
-//        }
-//        val utils = NotificationUtils(context)
-//        utils.clearAllNotifiication()
-//        utils.sendNotificationFullScreen(MainActivity.APP_PACKAGE_NAME)
-        val appRunningForeground = isAppRunningForeground(context)
-        Log.d("zhj", "doWork appRunningForeground: $appRunningForeground")
-//        while (num < 3) {
-//            moveAppToFront(context)
-//        }
-//        num = 0
-//        val utils = NotificationUtils(context)
-//        utils.clearAllNotifiication()
-//        utils.sendNotificationFullScreen(MainActivity.APP_PACKAGE_NAME)
-//        val intent =
-//            applicationContext.packageManager.getLaunchIntentForPackage(MainActivity.APP_PACKAGE_NAME)
-//        intent?.let {
-//            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//            applicationContext.startActivity(it)
-//        }
-        val intent = Intent("action")
-        context.sendBroadcast(intent)
+        val packageName = MainActivity.APP_PACKAGE_NAME
+        Log.d("zhj", "doWork: 开始执行定时任务打开 $packageName")
+        val intent =
+            context.packageManager.getLaunchIntentForPackage(packageName)
+
+        if (!isAppRunningForeground(context)) {
+            moveAppToFront(context)
+        }
+        wakeUp(context)
+        intent?.let {
+            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            context.startActivity(it)
+        }
+
         return Result.success()
     }
 
-    private var num = 0
+    @SuppressLint("InvalidWakeLockTag")
+    private fun wakeUp(context: Context) {
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val kl = km.newKeyguardLock("unLock")
+        kl.disableKeyguard()
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wl = pm.newWakeLock(
+            PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.SCREEN_BRIGHT_WAKE_LOCK,
+            "wakeupScreen"
+        )
+        wl.acquire()
+        wl.release()
+    }
+
 
     private fun isAppRunningForeground(context: Context): Boolean {
         val activityManager =
             context.applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val runningAppProcessList = activityManager.runningAppProcesses ?: return false
-        Log.d("zhj", "运行中的进程数量为 ${runningAppProcessList.size}")
         runningAppProcessList.forEach {
-            Log.d(
-                "zhj",
-                "应用包名= ${it.processName} 优先级= ${it.importance}"
-            )
             if (it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
                 && it.processName == context.applicationInfo.processName
             ) {
@@ -80,8 +79,6 @@ class MyWorker(private val context: Context, workerParams: WorkerParameters) :
                 break
             }
         }
-
-        num++
     }
 
 

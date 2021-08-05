@@ -43,6 +43,9 @@ class MainActivity : AppCompatActivity() {
 
         tvAppName = findViewById(R.id.tv_appName)
         progressBar = findViewById(R.id.progressBar)
+        editHour = findViewById(R.id.edit_hour)
+        editMinutes = findViewById(R.id.edit_minutes)
+
         findViewById<Button>(R.id.btn_selectApp).setOnClickListener {
             progressBar.visibility = View.VISIBLE
             startActivityForResult(Intent(this, AppListActivity::class.java), 999)
@@ -50,15 +53,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_start).setOnClickListener {
             initWorker()
         }
-        editHour = findViewById(R.id.edit_hour)
-        editMinutes = findViewById(R.id.edit_minutes)
 
-        val filter = IntentFilter("action").apply {
-//            addAction(Intent.ACTION_SCREEN_OFF)
-//            addAction(Intent.ACTION_SCREEN_ON)
-        }
-        myReceiver = MyReceiver()
-        registerReceiver(myReceiver, filter)
     }
 
     private fun initWorker() {
@@ -70,8 +65,6 @@ class MainActivity : AppCompatActivity() {
 
         val hourStr = editHour.text.toString().trim()
         val minutesStr = editMinutes.text.toString().trim()
-        Log.d("zhj", "initWorker hour=: $hourStr minutes= $minutesStr")
-
         if (hourStr.isEmpty() && minutesStr.isEmpty()) {
             return
         }
@@ -99,7 +92,6 @@ class MainActivity : AppCompatActivity() {
 
         val myWorker = OneTimeWorkRequestBuilder<MyWorker>()
             .setInitialDelay(minutes.toLong(), TimeUnit.MINUTES)
-//            .setInitialDelay(10, TimeUnit.SECONDS)
             .build()
 //
 
